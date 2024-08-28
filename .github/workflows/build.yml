@@ -1,6 +1,7 @@
 name: Build Zed Nightly
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: "0 0 * * *" # Runs every night at midnight UTC
   push:
@@ -10,55 +11,33 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          repository: zed-industries/zed
-          ref: main
-
-      - name: Install rust nightly
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-          target: wasm32-wasi
-
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v2.7.3
-
-      - name: Build release
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
-
-      - name: Archive build
-        uses: actions/upload-artifact@v4
-        with:
-          name: zed-release
-          path: target/release/zed.exe
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Download release artifact
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          name: zed-release
-          path: zed-release
+          repository: zed-industries/zed
+          ref: main
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        env:
+          RUSTFLAGS: -C target-cpu=alderlake
+        run: |
+          cargo build --release
+
+      - name: Archive build
+        run: |
+          Compress-Archive -CompressionLevel Optimal -Path target/release/zed.exe -DestinationPath zed-windows.zip
 
       - name: Get the current date
-        id: date
-        run: echo "CURRENT_DATE=$(date +'%Y%m%d')" >> $GITHUB_ENV
-
-      - name: Zip the release artifact
-        run: zip -r zed-windows.zip zed-release/*
+        run: |
+          $CURRENT_DATE = Get-Date -Format "yyyy-MM-dd"
+          echo "CURRENT_DATE=$CURRENT_DATE" >> $env:GITHUB_ENV
 
       - name: Upload release build artifact to GitHub Release
         uses: softprops/action-gh-release@v2

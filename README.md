@@ -1,13 +1,8 @@
 # Unofficial nightly builds of Zed for Windows
 
-## Installation
+## Warning
 
-Install using [Scoop](https://scoop.sh/)
-
-```
-scoop bucket add versions
-scoop install versions/zed-nightly
-```
+This is a personal repo built for my CPU with `-C target-cpu=alderlake`. You should not use this repo or its builds. Use the parent repo as it is generalized for any CPU.
 
 ## Is it safe?
 
