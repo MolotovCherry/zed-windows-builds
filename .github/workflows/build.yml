@@ -31,12 +31,24 @@ jobs:
       - run: Set-MpPreference -DisableRealtimeMonitoring $true
         shell: powershell
 
-      - name: Checkout repository
+      - name: Checkout Zed repo
         uses: actions/checkout@v4
         with:
           repository: zed-industries/zed
           ref: main
           fetch-depth: 0
+
+      - name: Checkout local repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository }}
+          path: '_local'
+
+      - name: Patch config.toml
+        run: |
+          # ensure there is a newline at the end before appending contents
+          Add-Content -Path ".cargo/config.toml" -Value "`r`n"
+          Get-Content -Path "_local/data/config.toml" | Add-Content -Path ".cargo/config.toml"
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -72,8 +84,6 @@ jobs:
           echo $(git log $REV --reverse --date=relative --abbrev=7 --pretty=format:"| [%h](https://github.com/zed-industries/zed/commit/%H) | %s |") >> changelog.txt
 
       - name: Build release
-        env:
-          RUSTFLAGS: -C target-cpu=alderlake
         run: |
           cargo build --release --color always
 

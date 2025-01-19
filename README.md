@@ -13,7 +13,7 @@ At the top you'll see something like
 Available CPUs for this target:
     native                  - Select the CPU of the current host (currently alderlake).
 ```
-In my case it was `alderlake`. In [build.yml](https://github.com/MolotovCherry/zed-windows-builds/blob/main/.github/workflows/build.yml), change the `alderlake` part in the `-C target-cpu=alderlake` to your specific CPU.
+In my case it was `alderlake`. In [config.toml](https://github.com/MolotovCherry/zed-windows-builds/blob/main/data/config.toml), change the `alderlake` part in the `target-cpu=alderlake` to your specific CPU.
 
 ## App
 
