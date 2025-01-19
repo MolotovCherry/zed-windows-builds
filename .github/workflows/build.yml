@@ -73,7 +73,7 @@ jobs:
 
       - name: Build release
         env:
-          RUSTFLAGS: -C target-cpu=alderlake
+          RUSTFLAGS: -C target-cpu=alderlake -C target-feature=+crt-static
         run: |
           cargo build --release --color always
 
