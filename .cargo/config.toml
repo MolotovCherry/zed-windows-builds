@@ -2,7 +2,10 @@
 # it is IMPORTANT you DO NOT set a rustflags env var, as this overrides
 # Zed's official config.toml, which can cause build issues
 [target."cfg(all())"]
-rustflags = ["-C", "target-cpu=alderlake"]
+rustflags = []
+# disabled because for some reason the build causes STATUS_ILLEGAL_EXCEPTION
+# during the build for my particular CPU. Should work with other CPUs tho
+#rustflags = ["-C", "target-cpu=alderlake"]
 
 [profile.release]
 debug = false

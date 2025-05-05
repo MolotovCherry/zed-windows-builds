@@ -1,14 +1,56 @@
-use std::fs;
-use std::io::Cursor;
 use std::path::Path;
+use std::{env, fs};
 use std::{error::Error, io::Write as _};
+use std::{io::Cursor, str::FromStr as _};
 
 use crossterm::{event::read, event::Event as CEvent};
 use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd};
+use strum::{EnumProperty, EnumString, VariantNames};
 use zip::read::ZipArchive;
+
+#[derive(EnumString, VariantNames, EnumProperty)]
+#[strum(ascii_case_insensitive)]
+enum Asset {
+    #[strum(props(name = "zed-opengl.exe"))]
+    OpenGl,
+    #[strum(props(name = "zed-opengl.zip"))]
+    ZipOpenGl,
+    #[strum(props(name = "zed.exe"))]
+    Vulkan,
+    #[strum(props(name = "zed.zip"))]
+    ZipVulkan,
+}
+
+fn help() {
+    let mut msg = "zed-dl <ASSET>\n\nAsset types are as follows (case-insensitive):\n".to_owned();
+
+    for name in Asset::VARIANTS {
+        msg.push_str(name);
+        msg.push('\n');
+    }
+
+    println!("{msg}");
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    let Some(asset) = env::args().nth(1) else {
+        help();
+        return Ok(());
+    };
+
+    match &*asset {
+        "--help" | "-h" => {
+            help();
+
+            return Ok(());
+        }
+
+        _ => (),
+    }
+
+    let looking_for_asset = Asset::from_str(&asset)?.get_str("name").unwrap();
+
     let octocrab = octocrab::instance();
 
     let latest = octocrab
@@ -23,8 +65,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let asset = latest
         .assets
-        .first()
-        .ok_or(format!("No asset found on latest release {tag}"))?;
+        .iter()
+        .find(|asset| asset.name.eq_ignore_ascii_case(looking_for_asset))
+        .ok_or_else(|| format!("No asset found on latest release {tag}"))?;
 
     println!("Downloading asset {}", asset.name);
 
@@ -68,8 +111,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .map(|event| match event {
                 Event::Start(t) => match t {
                     Tag::Heading { level, .. } => match level {
+                        HeadingLevel::H1 => "# ".to_owned(),
                         HeadingLevel::H2 => "## ".to_owned(),
-                        h => unimplemented!("heading level unimplemented {h:?}"),
+                        HeadingLevel::H3 => "### ".to_owned(),
+                        HeadingLevel::H4 => "#### ".to_owned(),
+                        HeadingLevel::H5 => "##### ".to_owned(),
+                        HeadingLevel::H6 => "###### ".to_owned(),
                     },
                     Tag::Table(_) => "\n| - | - |".to_owned(),
                     Tag::TableHead => "\n".to_owned(),
@@ -79,6 +126,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     Tag::CodeBlock(_) => "```\n".to_owned(),
                     Tag::Strikethrough => "~~".to_owned(),
                     Tag::Strong => "**".to_owned(),
+                    Tag::List(_) => "".to_owned(),
+                    Tag::Item => "* ".to_owned(),
                     _ => unimplemented!("tag unimplemented: {t:?}"),
                 },
                 Event::End(t) => match t {
@@ -91,6 +140,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     TagEnd::CodeBlock => "\n```".to_owned(),
                     TagEnd::Strikethrough => "~~".to_owned(),
                     TagEnd::Strong => "**".to_owned(),
+                    TagEnd::Item => "".to_owned(),
+                    TagEnd::List(_) => "".to_owned(),
                     t => unimplemented!("tagend unimplemented: {t:?}"),
                 },
                 Event::Text(t) => t.to_string(),

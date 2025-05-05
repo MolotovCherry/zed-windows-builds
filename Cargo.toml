@@ -11,3 +11,4 @@ zip = "2.6.1"
 termimad = "0.31.3"
 pulldown-cmark = "0.13.0"
 crossterm = "0.29.0"
+strum = { version = "0.27.1", features = ["derive"] }
