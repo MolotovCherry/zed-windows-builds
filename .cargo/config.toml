@@ -1,4 +1,8 @@
 [target."cfg(all())"]
 rustflags = []
+# disabled because for some reason the build causes STATUS_ILLEGAL_INSTRUCTION
+# during the build for my particular CPU. Should work with other CPUs tho
+#rustflags = ["-C", "target-cpu=alderlake"]
+
 [profile.release]
 debug = false
