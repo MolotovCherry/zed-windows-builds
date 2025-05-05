@@ -1,7 +1,7 @@
-use std::path::Path;
 use std::{env, fs};
 use std::{error::Error, io::Write as _};
 use std::{io::Cursor, str::FromStr as _};
+use std::{path::Path, process};
 
 use crossterm::{event::read, event::Event as CEvent};
 use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd};
@@ -21,35 +21,36 @@ enum Asset {
     ZipVulkan,
 }
 
-fn help() {
-    let mut msg = "zed-dl <ASSET>\n\nAsset types are as follows (case-insensitive):\n".to_owned();
+fn help() -> ! {
+    let mut msg = "zed-dl <ASSET>\n\nAsset types are as follows (case-insensitive):".to_owned();
 
     for name in Asset::VARIANTS {
-        msg.push_str(name);
         msg.push('\n');
+        msg.push_str(name);
     }
 
     println!("{msg}");
+    process::exit(1);
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let Some(asset) = env::args().nth(1) else {
         help();
-        return Ok(());
     };
 
     match &*asset {
         "--help" | "-h" => {
             help();
-
-            return Ok(());
         }
 
         _ => (),
     }
 
-    let looking_for_asset = Asset::from_str(&asset)?.get_str("name").unwrap();
+    let looking_for_asset = match Asset::from_str(&asset) {
+        Ok(a) => a.get_str("name").unwrap(),
+        Err(_) => help(),
+    };
 
     let octocrab = octocrab::instance();
 
