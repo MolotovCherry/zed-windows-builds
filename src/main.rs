@@ -40,7 +40,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .ok_or("asset has no extension")?
         .to_string_lossy();
 
-    match &*ext {
+    match &*ext.to_ascii_lowercase() {
         "zip" => {
             let cursor = Cursor::new(&data);
             let mut zip = ZipArchive::new(cursor)?;
